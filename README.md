@@ -1,4 +1,4 @@
-# AS Corretora de Seguros — site institucional
+# AS Seguros & Consórcios — site institucional
 
 Site estático, responsivo e orientado à conversão em WhatsApp. Sem build e sem dependências externas de JavaScript: basta subir os arquivos em qualquer hospedagem (Vercel, Netlify, Cloudflare Pages, Hostinger, cPanel).
 
@@ -13,12 +13,13 @@ Domínio previsto: **www.ascorretoraseguros.com**
 | `termos-de-uso.html` | Página legal linkada no rodapé |
 | `robots.txt` / `sitemap.xml` | SEO técnico, já com o domínio real |
 | `assets/` | Logo, favicons, imagem de compartilhamento e foto da fachada |
+| `assets/marcas/` | Onde entram os logos oficiais das companhias (veja `LEIA-ME.txt`) |
 
 ## Antes de publicar
 
 1. **Páginas legais.** Os textos são uma base sólida, mas precisam de revisão jurídica.
 2. **Ative o formulário** — passo obrigatório, descrito abaixo. Sem isso o e-mail não chega.
-3. **Foto da equipe.** A seção "Quem Somos" usa uma imagem de banco. Uma foto real do Alan e da equipe no escritório aumenta bastante a confiança — é a troca com maior retorno.
+3. **Fotos.** A foto do Alan já está no ar em dois pontos. As imagens dos seguros ainda são de banco — trocar por fotos reais é a melhoria com maior retorno depois desta.
 
 ## Configuração
 
@@ -130,9 +131,24 @@ As fotos de seguros vêm do CDN do Unsplash (licença livre para uso comercial).
 - **Movimento:** entradas suaves via `IntersectionObserver`; com `prefers-reduced-motion` ativo a página fica praticamente estática.
 - **SEO:** title e description do briefing, Open Graph, Twitter Cards, canonical, sitemap, robots e dados estruturados `InsuranceAgency` com endereço completo, CEP, coordenadas, fundador, CNPJ, Instagram e área de atendimento nacional.
 
+## Logos das seguradoras e administradoras
+
+O site lista as 12 seguradoras e as 4 administradoras de consórcio em cartões. Hoje cada cartão mostra o **nome** da companhia em tipografia limpa — não criei nenhum logo, porque logo recriado ou baixado de busca costuma violar o manual de marca da companhia.
+
+Quando você conseguir os arquivos oficiais (peça o kit de parceiro a cada uma), é só:
+
+1. salvar os PNGs em `assets/marcas/` com os nomes listados no `LEIA-ME.txt` da pasta;
+2. trocar `usarLogosMarcas: false` por `true` no topo do `<script>`.
+
+O sistema é tolerante: quem tiver arquivo aparece como logo, quem não tiver continua aparecendo pelo nome. Nenhum cartão fica vazio e nada quebra. Enquanto estiver desligado, o navegador nem tenta baixar as imagens.
+
+O nome também fica sempre no HTML, mesmo com o logo ligado — o Google e os leitores de tela continuam lendo "Porto", "Bradesco Consórcios" e assim por diante.
+
 ## Sobre o nome
 
-O briefing usa **AS Corretora de Seguros** (que também é o domínio e o Instagram), então esse é o nome que aparece no site. A razão social **AS Seguros & Consórcios**, que você me informou antes, ficou registrada no `legalName` dos dados estruturados. Se preferir que o nome comercial no site seja o novo, é uma alteração rápida — me avise.
+O site usa **AS Seguros & Consórcios** em todos os textos, títulos, mensagens de WhatsApp e dados estruturados.
+
+Vale conferir dois pontos que ainda apontam para o nome antigo e não dependem do site: o domínio `ascorretoraseguros.com` e o Instagram `@ascorretoradeseguros`. Não há problema em manter — o Google entende marca e domínio como coisas separadas — mas, se você trocar algum deles, me avise que eu atualizo o canonical, o sitemap e os links.
 
 ## O que não foi inventado
 
@@ -140,7 +156,7 @@ Somente os dados fornecidos: nome, logo, CNPJ, Alan Silva como fundador, mais de
 
 ## Próximos passos sugeridos
 
-- Foto real da equipe e do escritório por dentro.
+- Foto da equipe completa, para complementar a do fundador.
 - Depoimentos de clientes, com autorização por escrito.
 - Páginas específicas por produto (`/seguro-auto`, `/consorcio`, `/seguro-agro`) para captar buscas de cauda longa.
 - Google Search Console + Google Business Profile para "corretora de seguros em Palmas".
