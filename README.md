@@ -16,8 +16,8 @@ Domínio previsto: **www.ascorretoraseguros.com**
 
 ## Antes de publicar
 
-1. **Páginas legais.** Os textos são uma base sólida, mas precisam de revisão jurídica. Preencha os trechos marcados como `[PREENCHER]` (e-mail de contato).
-2. **E-mail institucional.** Se existir, me passe que eu adiciono no rodapé e nas páginas legais.
+1. **Páginas legais.** Os textos são uma base sólida, mas precisam de revisão jurídica.
+2. **Decida como o formulário entrega o lead** (veja a seção abaixo).
 3. **Foto da equipe.** A seção "Quem Somos" usa uma imagem de banco. Uma foto real do Alan e da equipe no escritório aumenta bastante a confiança — é a troca com maior retorno.
 
 ## Configuração
@@ -27,10 +27,13 @@ No topo do `<script>`, em `index.html`:
 ```js
 const SITE = {
   whatsapp: '5563984565618',   // só dígitos, com DDI 55
+  emails: ['alansilvaseguros@yahoo.com', 'Alansilvaseguros@icloud.com'],
   endpoint: '',                // vazio = nada sai do navegador
   mensagens: { ... }           // texto de cada botão de WhatsApp
 };
 ```
+
+Os dois e-mails aparecem no rodapé, na seção de localização, nas páginas legais e nos dados estruturados. O botão "Enviar por e-mail" endereça a solicitação para os dois de uma vez.
 
 ### Mensagens de WhatsApp por contexto
 
@@ -47,9 +50,23 @@ Cada botão abre a conversa com um texto diferente, conforme o briefing:
 
 Os botões "Solicitar cotação" dos cards levam ao formulário já com o tipo de atendimento selecionado — assim o lead fica registrado no site antes de ir para o WhatsApp.
 
-## Formulário
+## Formulário: como o lead chega até você
 
-Funciona 100% no navegador: valida, mostra a confirmação e monta o link de WhatsApp com os dados. **Nenhuma informação é enviada para serviço externo** enquanto `SITE.endpoint` estiver vazio.
+Hoje o formulário funciona 100% no navegador. Ele valida, mostra a confirmação e oferece dois caminhos de envio:
+
+- **Enviar dados pelo WhatsApp** — abre a conversa com (63) 98456-5618 e a mensagem já escrita.
+- **Enviar por e-mail** — abre o app de e-mail do visitante com destinatário, assunto e corpo prontos, endereçado aos dois endereços da empresa.
+
+Nos dois casos o visitante ainda precisa tocar em "enviar" no app que abriu. É o comportamento normal de site estático e funciona sem nenhum serviço contratado.
+
+**Se você quiser que a solicitação chegue sozinha na caixa de entrada**, sem depender do app do visitante, é preciso um serviço que receba o formulário. O código já está preparado: basta preencher `SITE.endpoint`. Duas opções comuns:
+
+| Serviço | Como funciona |
+|---|---|
+| FormSubmit | Sem cadastro. Aponte o endpoint para o endereço deles usando o e-mail da empresa e confirme uma vez por e-mail. |
+| Formspree / Make / Zapier / RD Station | Cadastro gratuito ou pago, com painel de acompanhamento e integração com CRM. |
+
+Me avise qual você prefere e eu deixo configurado e testado. **Nenhum dado sai do navegador enquanto `SITE.endpoint` estiver vazio** — é o padrão atual, conforme o briefing.
 
 Para conectar a um CRM, e-mail ou backend, preencha `SITE.endpoint` com a URL que receberá um `POST` em JSON:
 
