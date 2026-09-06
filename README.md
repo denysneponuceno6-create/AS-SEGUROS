@@ -17,7 +17,7 @@ Domínio previsto: **www.ascorretoraseguros.com**
 ## Antes de publicar
 
 1. **Páginas legais.** Os textos são uma base sólida, mas precisam de revisão jurídica.
-2. **Decida como o formulário entrega o lead** (veja a seção abaixo).
+2. **Ative o formulário** — passo obrigatório, descrito abaixo. Sem isso o e-mail não chega.
 3. **Foto da equipe.** A seção "Quem Somos" usa uma imagem de banco. Uma foto real do Alan e da equipe no escritório aumenta bastante a confiança — é a troca com maior retorno.
 
 ## Configuração
@@ -28,7 +28,7 @@ No topo do `<script>`, em `index.html`:
 const SITE = {
   whatsapp: '5563984565618',   // só dígitos, com DDI 55
   emails: ['alansilvaseguros@yahoo.com', 'Alansilvaseguros@icloud.com'],
-  endpoint: '',                // vazio = nada sai do navegador
+  endpoint: 'https://formsubmit.co/ajax/alansilvaseguros@yahoo.com',
   mensagens: { ... }           // texto de cada botão de WhatsApp
 };
 ```
@@ -52,37 +52,54 @@ Os botões "Solicitar cotação" dos cards levam ao formulário já com o tipo d
 
 ## Formulário: como o lead chega até você
 
-Hoje o formulário funciona 100% no navegador. Ele valida, mostra a confirmação e oferece dois caminhos de envio:
+O formulário entrega a solicitação **direto nas duas caixas de entrada da empresa**, sem o visitante precisar abrir WhatsApp ou app de e-mail.
 
-- **Enviar dados pelo WhatsApp** — abre a conversa com (63) 98456-5618 e a mensagem já escrita.
-- **Enviar por e-mail** — abre o app de e-mail do visitante com destinatário, assunto e corpo prontos, endereçado aos dois endereços da empresa.
-
-Nos dois casos o visitante ainda precisa tocar em "enviar" no app que abriu. É o comportamento normal de site estático e funciona sem nenhum serviço contratado.
-
-**Se você quiser que a solicitação chegue sozinha na caixa de entrada**, sem depender do app do visitante, é preciso um serviço que receba o formulário. O código já está preparado: basta preencher `SITE.endpoint`. Duas opções comuns:
-
-| Serviço | Como funciona |
-|---|---|
-| FormSubmit | Sem cadastro. Aponte o endpoint para o endereço deles usando o e-mail da empresa e confirme uma vez por e-mail. |
-| Formspree / Make / Zapier / RD Station | Cadastro gratuito ou pago, com painel de acompanhamento e integração com CRM. |
-
-Me avise qual você prefere e eu deixo configurado e testado. **Nenhum dado sai do navegador enquanto `SITE.endpoint` estiver vazio** — é o padrão atual, conforme o briefing.
-
-Para conectar a um CRM, e-mail ou backend, preencha `SITE.endpoint` com a URL que receberá um `POST` em JSON:
-
-```json
-{
-  "tipo": "Seguro Auto",
-  "nome": "...",
-  "whatsapp": "(63) 98456-5618",
-  "email": "...",
-  "cidade": "Palmas / TO",
-  "pessoa": "Pessoa Física",
-  "mensagem": "..."
-}
+```
+alansilvaseguros@yahoo.com      (destinatário)
+Alansilvaseguros@icloud.com     (cópia)
 ```
 
-Serve qualquer destino que aceite JSON: rota própria, Formspree, Make/Zapier, RD Station, HubSpot, Google Apps Script. Nunca coloque chaves de API ou tokens no HTML — use variáveis de ambiente no servidor.
+O e-mail chega assim:
+
+| Campo | Exemplo |
+|---|---|
+| Assunto | Solicitação de cotação — Seguro Auto — Maria de Souza |
+| Responder para | o e-mail do próprio cliente, quando informado |
+| Corpo | tabela com tipo de atendimento, nome, WhatsApp, e-mail, cidade/estado, pessoa física ou jurídica, mensagem e origem |
+
+### ATIVE O FORMULÁRIO ANTES DE DIVULGAR O SITE
+
+O serviço usado é o **FormSubmit** (gratuito, sem cadastro, sem chave de API). Ele exige uma confirmação única:
+
+1. Publique o site.
+2. Preencha o formulário uma vez, com dados de teste.
+3. Abra a caixa de entrada do **alansilvaseguros@yahoo.com** e procure um e-mail do FormSubmit — cheque também o spam.
+4. Clique em **"Activate Form"**.
+5. Envie um segundo teste. Ele deve chegar em segundos nas duas caixas.
+
+**Enquanto o passo 4 não for feito, nada é entregue.** O site continua funcionando: o visitante vê a tela de "falta só um passo" com os botões de WhatsApp e e-mail, então o contato não se perde — mas a entrega automática só começa após a ativação.
+
+### Se algo falhar no envio
+
+O código não deixa o lead escapar:
+
+- espera até 8 segundos por tentativa e tenta novamente uma vez;
+- verifica a resposta do serviço, não apenas se a conexão abriu;
+- se ainda assim falhar, mostra "Falta só um passo para concluir" e destaca os botões de WhatsApp e e-mail com todos os dados prontos;
+- o botão fica desabilitado durante o envio, evitando solicitação duplicada.
+
+### Trocar de serviço depois
+
+Basta mudar uma linha, `SITE.endpoint`, no topo do `<script>`:
+
+| Situação | Valor |
+|---|---|
+| Atual (FormSubmit) | `https://formsubmit.co/ajax/alansilvaseguros@yahoo.com` |
+| Esconder o e-mail do código-fonte | depois de ativar, o FormSubmit fornece um endereço embaralhado; troque por `https://formsubmit.co/ajax/SEU-CODIGO` |
+| Formspree, Make, Zapier, RD Station | a URL que o painel do serviço fornecer |
+| Desligar o envio automático | deixe `''` (o site volta a usar só WhatsApp e e-mail manual) |
+
+Nunca coloque chaves de API ou tokens no HTML — eles ficam visíveis para qualquer visitante. Se o serviço exigir chave, ela precisa ficar no servidor.
 
 Proteções já embutidas: campo-isca invisível para robôs, bloqueio de envio em menos de 2,5 s, limite de caracteres por campo e remoção de `<` e `>` antes de reutilizar qualquer texto (anti-XSS).
 

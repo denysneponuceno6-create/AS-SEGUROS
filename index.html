@@ -374,6 +374,8 @@ p{margin:0}
 .hp{position:absolute!important;left:-9999px;width:1px;height:1px;opacity:0}
 .success{display:none;text-align:center;padding:1rem .5rem}
 .success.is-on{display:block}
+.success.is-pendente .success__ico{background:rgba(201,162,75,.16);color:var(--gold-ink)}
+.btn[disabled]{opacity:.65;cursor:progress;transform:none}
 .success__ico{width:64px;height:64px;margin:0 auto 1.2rem;border-radius:50%;background:rgba(34,193,94,.12);color:var(--wa-dark);display:grid;place-items:center}
 .success__ico .ico{width:32px;height:32px}
 .success h3{font-size:1.28rem;margin-bottom:.6rem}
@@ -1095,15 +1097,15 @@ p{margin:0}
             </div>
 
             <div class="form__foot">
-              <button class="btn btn--primary btn--wide" type="submit">Solicitar minha cotação</button>
-              <p class="form__note">Seus dados serão utilizados exclusivamente para atendimento da sua solicitação. Saiba mais na <a href="politica-de-privacidade.html">Política de Privacidade</a>.</p>
+              <button class="btn btn--primary btn--wide" id="btn-enviar" type="submit">Solicitar minha cotação</button>
+              <p class="form__note">Seus dados serão utilizados exclusivamente para atendimento da sua solicitação e enviados por um serviço de formulários que apenas entrega a mensagem à nossa equipe. Saiba mais na <a href="politica-de-privacidade.html">Política de Privacidade</a>.</p>
             </div>
           </div>
 
           <div class="success" id="form-success" role="status" aria-live="polite" tabindex="-1">
             <div class="success__ico"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg></div>
-            <h3>Solicitação recebida com sucesso</h3>
-            <p>Nossa equipe entrará em contato em breve. Se quiser adiantar, envie os mesmos dados agora pelo WhatsApp ou por e-mail.</p>
+            <h3 id="success-titulo">Solicitação recebida com sucesso</h3>
+            <p id="success-texto">Sua solicitação chegou à nossa equipe e entraremos em contato em breve. Se quiser adiantar, fale com a gente agora.</p>
             <div class="success__actions">
               <a class="btn btn--wa btn--wide" id="send-wa" href="#" target="_blank" rel="noopener">
                 <svg class="ico" aria-hidden="true"><use href="#i-wa"></use></svg>Enviar dados pelo WhatsApp
@@ -1245,7 +1247,10 @@ p{margin:0}
 const SITE = {
   whatsapp: '5563984565618',   // apenas dígitos, com DDI
   emails: ['alansilvaseguros@yahoo.com', 'Alansilvaseguros@icloud.com'],
-  endpoint: '',                // vazio = nenhum dado sai do navegador (veja o README)
+  // Serviço que entrega a solicitação no e-mail da empresa.
+  // O 1º envio dispara um e-mail de confirmação para o endereço abaixo:
+  // é preciso clicar em "Activate Form" uma única vez. Detalhes no README.
+  endpoint: 'https://formsubmit.co/ajax/alansilvaseguros@yahoo.com',
   mensagens: {
     especialista:  'Olá! Vim pelo site da AS Corretora de Seguros e gostaria de falar com um especialista.',
     cotacao:       'Olá! Vim pelo site da AS Corretora de Seguros e gostaria de solicitar uma cotação.',
@@ -1420,17 +1425,58 @@ function montarMensagem(d) {
   return linhas.join('\n');
 }
 
-/** Envio opcional para servidor próprio (só com SITE.endpoint preenchido). */
-async function enviarParaServidor(dados) {
-  if (!SITE.endpoint) return;
+/** Organiza os dados no formato que o serviço de e-mail espera. */
+function montarPayload(d, assunto) {
+  const copias = SITE.emails.slice(1).join(',');
+  const p = {
+    _subject: assunto,
+    _template: 'table',
+    _captcha: 'false',
+    'Tipo de atendimento': d.tipo,
+    'Nome': d.nome,
+    'WhatsApp': d.whatsapp,
+    'E-mail': d.email || 'não informado',
+    'Cidade/Estado': d.cidade || 'não informado',
+    'Pessoa': d.pessoa,
+    'Mensagem': d.mensagem || '—',
+    'Origem': 'Formulário de cotação do site'
+  };
+  if (copias)  p._cc = copias;          // segunda caixa de entrada recebe cópia
+  if (d.email) p._replyto = d.email;    // responder ao cliente com um clique
+  return p;
+}
+
+/**
+ * Entrega a solicitação no e-mail da empresa.
+ * Desiste após 8 s, tenta de novo uma vez e devolve true/false —
+ * quem chama decide o que mostrar ao visitante.
+ */
+async function enviarParaEmail(dados, assunto, tentativa = 1) {
+  if (!SITE.endpoint) return false;
+  const controle = new AbortController();
+  const limite = setTimeout(() => controle.abort(), 8000);
   try {
-    await fetch(SITE.endpoint, {
+    const r = await fetch(SITE.endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dados)
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(montarPayload(dados, assunto)),
+      signal: controle.signal
     });
-  } catch (e) {
-    console.warn('Não foi possível registrar a solicitação no servidor.', e);
+    clearTimeout(limite);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const resposta = await r.json().catch(() => ({}));
+    if (resposta.success === false || resposta.success === 'false') {
+      throw new Error(resposta.message || 'envio recusado pelo serviço');
+    }
+    return true;
+  } catch (erro) {
+    clearTimeout(limite);
+    if (tentativa < 2) {
+      await new Promise(f => setTimeout(f, 900));
+      return enviarParaEmail(dados, assunto, tentativa + 1);
+    }
+    console.warn('Não foi possível entregar a solicitação por e-mail:', erro.message);
+    return false;
   }
 }
 
@@ -1444,13 +1490,31 @@ form.addEventListener('submit', async e => {
   if ($('#site-url').value !== '' || Date.now() - abertoEm < 2500) return;  // anti-spam
   if (!validar()) return;
 
-  const dados = coletarDados();
-  await enviarParaServidor(dados);
-  const texto = montarMensagem(dados);
-  $('#send-wa').setAttribute('href', linkWhats(texto));
-  $('#send-mail').setAttribute('href',
-    linkEmail('Solicitação de cotação — ' + dados.tipo + ' — ' + dados.nome, texto));
+  const botao = $('#btn-enviar');
+  const rotulo = botao.textContent;
+  botao.disabled = true;
+  botao.textContent = 'Enviando…';
 
+  const dados   = coletarDados();
+  const texto   = montarMensagem(dados);
+  const assunto = 'Solicitação de cotação — ' + dados.tipo + ' — ' + dados.nome;
+
+  const entregue = await enviarParaEmail(dados, assunto);
+
+  // os dois botões ficam prontos de qualquer forma
+  $('#send-wa').setAttribute('href', linkWhats(texto));
+  $('#send-mail').setAttribute('href', linkEmail(assunto, texto));
+
+  success.classList.toggle('is-pendente', !entregue);
+  $('#success-titulo').textContent = entregue
+    ? 'Solicitação recebida com sucesso'
+    : 'Falta só um passo para concluir';
+  $('#success-texto').textContent = entregue
+    ? 'Sua solicitação chegou à nossa equipe e entraremos em contato em breve. Se quiser adiantar, fale com a gente agora.'
+    : 'Não conseguimos enviar automaticamente neste momento. Toque em um dos botões abaixo para nos mandar os mesmos dados — leva poucos segundos.';
+
+  botao.disabled = false;
+  botao.textContent = rotulo;
   fields.style.display = 'none';
   success.classList.add('is-on');
   success.focus();
