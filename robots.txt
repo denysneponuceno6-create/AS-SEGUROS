@@ -1,0 +1,6 @@
+# robots.txt — AS Corretora de Seguros
+
+User-agent: *
+Allow: /
+
+Sitemap: https://www.ascorretoraseguros.com/sitemap.xml
